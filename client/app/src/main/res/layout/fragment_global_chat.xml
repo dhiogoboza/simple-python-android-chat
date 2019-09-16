@@ -1,0 +1,51 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:id="@+id/fgc_main_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ListView
+        android:id="@+id/fgc_messages_list_view"
+        android:headerDividersEnabled="false"
+        android:footerDividersEnabled="false"
+        android:background="@drawable/background"
+        android:divider="@color/transparent"
+        android:listSelector="@color/transparent"
+        android:layout_marginBottom="@dimen/chat_text_view_height"
+        android:stackFromBottom="true"
+        android:transcriptMode="alwaysScroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </ListView>
+
+    <RelativeLayout
+        android:layout_alignParentBottom="true"
+        android:padding="2dp"
+        android:background="@color/transparent_blue"
+        android:layout_width="match_parent"
+        android:orientation="horizontal"
+        android:layout_height="@dimen/chat_text_view_height" >
+
+        <EditText
+            android:id="@+id/fgc_send_messages_text_view"
+            android:textSize="12sp"
+            android:gravity="top"
+            android:layout_marginRight="45dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+        
+        <ImageButton
+            android:id="@+id/fgc_send_messages_button"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:padding="5dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentRight="true"
+            android:src="@android:drawable/ic_menu_send"
+            android:gravity="center_vertical" />
+
+    </RelativeLayout>
+
+
+</RelativeLayout>
