@@ -52,9 +52,15 @@ public class Messenger {
     }
 
     public void sendMessage(String message) {
-        message = message.replaceAll("\\r|\\n", "");
+        final String messageToSend = message.replaceAll("\\r|\\n", "");
 
-        mClient.sendData("{\"content\": \"" + message + "\"}");
+        new Thread() {
+            @Override
+            public void run() {
+                // FIXME: use a better way
+                mClient.sendData("{\"content\": \"" + messageToSend + "\"}");
+            }
+        }.start();
     }
 
     public void sendMessage(String message, User dest) {

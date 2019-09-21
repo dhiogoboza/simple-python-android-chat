@@ -4,13 +4,14 @@ import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+
+import androidx.fragment.app.FragmentActivity;
 
 import br.ufrn.chatclient.chat.Client;
 import br.ufrn.chatclient.chat.Messenger;

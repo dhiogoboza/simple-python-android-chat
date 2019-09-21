@@ -1,9 +1,10 @@
 package br.ufrn.chatclient.fragments;
 
-import android.support.v4.app.Fragment;
 import android.graphics.PorterDuff;
 import android.view.View;
 import android.widget.ProgressBar;
+
+import androidx.fragment.app.Fragment;
 
 import br.ufrn.chatclient.R;
 
