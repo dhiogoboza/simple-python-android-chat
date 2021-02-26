@@ -9,11 +9,10 @@ import random
 from conn import Conn
 
 HOST = '' 
-CONNECTIONS_LIST = []
 RECV_BUFFER = 4096
 PORT = 9009
 
-# Tutorial at: https://www.bogotobogo.com/python/python_network_programming_tcp_server_client_chat_server_chat_client_select.php
+currentConnections = []
 
 def chat_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,27 +23,26 @@ def chat_server():
     main_conn = Conn(server_socket)
 
     # add server socket object to the list of readable connections
-    CONNECTIONS_LIST.append(main_conn)
+    currentConnections.append(main_conn)
  
     print("Chat server started on port", str(PORT))
  
     while 1:
-        sockets = (o.socket for o in CONNECTIONS_LIST)
-        
+        sockets = (o.socket for o in currentConnections)
+
         # get the list sockets which are ready to be read through select
         # 4th arg, time_out  = 0 : poll and never block
         ready_to_read,ready_to_write,in_error = select.select(sockets,[],[],0)
 
         for sock in ready_to_read:
-            
-            for conn in CONNECTIONS_LIST:
+            for conn in currentConnections:
                 if conn.socket == sock:
                     currentConn = conn
 
             # a new connection request recieved
             if currentConn == main_conn:
                 sockfd, addr = server_socket.accept()
-                CONNECTIONS_LIST.append(Conn(sockfd, addr))
+                currentConnections.append(Conn(sockfd, addr))
             # a message from a client, not a new connection
             else:
                 # process data recieved from client, 
@@ -59,31 +57,46 @@ def chat_server():
                         if msg.get("setname"):
                             currentConn.username = msg["setname"]
                             currentConn.color = "#%06x" % random.randint(0, 0xFFFFFF)
+                            currentConn.userId = random.randint(0, 0xFFFFFF) # TODO: check if userId is unique
+
+                            welcomeMsg = {'msgtype': 2, 'username': currentConn.username, 'color': str(currentConn.color), 'userid': currentConn.userId}
+                            send_message(currentConn, json.dumps(welcomeMsg))
 
                             broadcast(server_socket, sockfd, '{"servermsg": "' + conn.username + ' entrou no chat."}')
+
+                            # FIXME: add this in a function
+                            usersJson = {"users": []}
+                            for c in currentConnections:
+                                if hasattr(c, 'username') and hasattr(c, 'userId') and hasattr(c, 'color'):
+                                    user = {'username': c.username, 'color': str(c.color), 'userid': c.userId}
+                                    usersJson['users'].append(user)
+
+                            broadcast(server_socket, sockfd, json.dumps(usersJson))
                         elif msg.get("action"):
                             if msg["action"] == "showusers":
-                                usersStr = '{"users": ["'
-                                for c in CONNECTIONS_LIST:
-                                    if c != currentConn and c != main_conn:
-                                        usersStr += c.username + '", "'
+                                usersJson = {"users": []}
+                                for c in currentConnections:
+                                    if c != currentConn and c != main_conn and hasattr(c, 'username') and hasattr(c, 'userId') and hasattr(c, 'color'):
+                                        user = {'username': c.username, 'color': str(c.color), 'userid': c.userId}
+                                        usersJson['users'].append(user)
 
-                                send_message(currentConn, usersStr[:-3] + ']}')
+                                send_message(currentConn, json.dumps(usersJson))
                         else:
                             # there is something in the socket
-                            broadcast(server_socket, sock, '{"username": "' + currentConn.username + '", "color" : ' + currentConn.color + ', "content": "' + msg["content"] + '"}')
+                            message = {'content': msg["content"], 'username': currentConn.username, 'color': str(currentConn.color), 'userid': currentConn.userId}
+                            broadcast(server_socket, sock, json.dumps(message))
                     else:
                         # remove the socket that's broken    
-                        if currentConn in CONNECTIONS_LIST:
-                            CONNECTIONS_LIST.remove(currentConn)
+                        if currentConn in currentConnections:
+                            currentConnections.remove(currentConn)
 
                         # at this stage, no data means probably the connection has been broken
                         broadcast(server_socket, sock, '{"servermsg": Usuario "' + currentConn.username + ' saiu"}')
                 # exception 
                 except:
                     broadcast(server_socket, sock, '{"servermsg": "Usuario ' + currentConn.username + ' saiu"}')
-                    if currentConn in CONNECTIONS_LIST:
-                        CONNECTIONS_LIST.remove(currentConn)
+                    if currentConn in currentConnections:
+                        currentConnections.remove(currentConn)
 
                     continue
 
@@ -91,21 +104,22 @@ def chat_server():
  
 # send message to a specific user
 def send_message(conn, message):
+    print("data sent:", message)
     try :
-        conn.socket.send(message)
+        conn.socket.send(message + '\r')
     except :
         # broken socket connection
         conn.socket.close()
         # broken socket, remove it
-        if conn in CONNECTIONS_LIST:
-            CONNECTIONS_LIST.remove(conn)
+        if conn in currentConnections:
+            currentConnections.remove(conn)
    
 # broadcast chat messages to all connected clients
 def broadcast(server_socket, sock, message):
-    for conn in CONNECTIONS_LIST:
+    for conn in currentConnections:
         # send the message only to peer
         if conn.socket != server_socket and conn.socket != sock :
-            send_message(conn, message)
+            send_message(conn, message + '\r')
  
 if __name__ == "__main__":
     sys.exit(chat_server())      

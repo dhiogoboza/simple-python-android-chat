@@ -63,10 +63,16 @@ public class Messenger {
         }.start();
     }
 
-    public void sendMessage(String message, User dest) {
-        message = message.replaceAll("\\r|\\n", "");
+    public void sendMessage(String message, final User dest) {
+        final String msg = message.replaceAll("\\r|\\n", "");
 
-        mClient.sendData("{\"content\": \"" + message + "\", \"dest\": \"" + dest.getUserId() + "\" }");
+        new Thread() {
+            @Override
+            public void run() {
+                // FIXME: use a better way
+                mClient.sendData("{\"content\": \"" + msg + "\", \"dest\": \"" + dest.getUserId() + "\" }");
+            }
+        }.start();
     }
 
     public List<Message> getGlobalMessages() {
@@ -86,7 +92,9 @@ public class Messenger {
     }
 
     public void addUser(User user) {
-        if (!users.contains(user)) {
+        Log.d(TAG, "meu id: " + this.user.getUserId());
+        Log.d(TAG, "id pra add: " + user.getUserId());
+        if (!users.contains(user) && !user.getUserId().equals(this.user.getUserId())) {
             Log.d(TAG, "adding user: " + user);
 
             users.add(user);

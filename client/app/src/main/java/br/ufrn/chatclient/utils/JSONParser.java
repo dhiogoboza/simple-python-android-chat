@@ -42,10 +42,10 @@ public class JSONParser {
                 message.setSender(user);
 
                 messenger.addUser(user);
-                if (!jsonObject.has(PRIVATE_MSG_NODE)) {
-                    messenger.addGlobalMessage(message);
-                } else {
+                if (jsonObject.has(PRIVATE_MSG_NODE)) {
                     messenger.addUserMessage(user, message);
+                } else {
+                    messenger.addGlobalMessage(message);
                 }
             } else if (jsonObject.has(MSG_TYPE_NODE)) {
                 int msgType = jsonObject.getInt(MSG_TYPE_NODE);
@@ -53,6 +53,9 @@ public class JSONParser {
                 switch (msgType) {
                     case 1:
                         messenger.removeUser(jsonObject.getString(USER_ID_NODE));
+                        break;
+                    case 2:
+                        messenger.setUser(parseUser(jsonObject));
                         break;
                 }
             } else if (jsonObject.has(USERS_NODE)) {
@@ -63,9 +66,8 @@ public class JSONParser {
                 }
 
             }
-
         } catch (JSONException e) {
-            Log.e(TAG, "Received data nto is in json format", e);
+            Log.e(TAG, "Received data not is in json format", e);
         }
     }
 

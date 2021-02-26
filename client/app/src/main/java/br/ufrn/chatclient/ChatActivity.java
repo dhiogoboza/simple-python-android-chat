@@ -27,19 +27,12 @@ public class ChatActivity extends FragmentActivity implements View.OnClickListen
     private EditText mEditTextMessage;
     private MessagesAdapter mAdapter;
 
-    public ChatActivity() {
-
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.fragment_global_chat);
 
-
-        //mRootView = (ViewGroup) inflater.inflate(R.layout.list_content, null);
-        RelativeLayout fl = (RelativeLayout) findViewById(R.id.fgc_main_layout);
+        RelativeLayout fl = findViewById(R.id.fgc_main_layout);
         fl.setLayoutParams(new FrameLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
 
         int userPosition = getIntent().getIntExtra(FragmentUsers.USER_POSITION, 0);
@@ -49,20 +42,18 @@ public class ChatActivity extends FragmentActivity implements View.OnClickListen
 
         mAdapter = Messenger.getInstance().getAdapterFromUser(mUser);
 
-        mMessagesListView = (ListView) findViewById(R.id.fgc_messages_list_view);
+        mMessagesListView = findViewById(R.id.fgc_messages_list_view);
         mMessagesListView.setAdapter(mAdapter);
 
         findViewById(R.id.fgc_send_messages_button).setOnClickListener(this);
-        mEditTextMessage = (EditText) findViewById(R.id.fgc_send_messages_text_view);
+        mEditTextMessage = findViewById(R.id.fgc_send_messages_text_view);
 
         mEditTextMessage.setOnKeyListener(this);
-
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         Messenger.getInstance().removeAdapterFromUser(mUser);
     }
 

@@ -13,25 +13,54 @@ import android.widget.ProgressBar;
 
 import androidx.fragment.app.FragmentActivity;
 
+import java.lang.ref.WeakReference;
+
 import br.ufrn.chatclient.chat.Client;
 import br.ufrn.chatclient.chat.Messenger;
 import br.ufrn.chatclient.utils.Utilities;
 
-//import android.app.FragmentManager;
-//import android.app.FragmentTransaction;
-
-
 public class MainActivity extends FragmentActivity implements View.OnClickListener {
 
+    @SuppressWarnings("unused")
     private static final String TAG = "MainActivity";
-
-    //private FragmentLogin mFragmentLogin = new FragmentLogin();
 
     private EditText mUserName;
     private EditText mServerAddress;
     private EditText mServerPort;
 
     private ProgressBar progressBar;
+
+    private static class ConnectionTask extends AsyncTask<Void, Void, Boolean> {
+        private WeakReference<MainActivity> mActivity;
+
+        ConnectionTask(MainActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mActivity.get().showProgressBar();
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Messenger.getInstance().getClient().connect();
+
+            return Messenger.getInstance().getClient().isConnected();
+        }
+
+        @Override
+        protected void onPostExecute(Boolean connected) {
+            mActivity.get().hideProgressBar();
+            if (connected) {
+                mActivity.get().startActivity(new Intent(mActivity.get(), TabsActivity.class));
+            } else {
+                mActivity.get().mServerAddress.requestFocus();
+                Utilities.showMessage(mActivity.get(), R.string.error_connecting);
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,100 +69,53 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
         loadProgressBar(R.id.fl_login_progress, View.INVISIBLE);
 
-        mUserName = (EditText) findViewById(R.id.fl_et_username);
-        mServerAddress = (EditText) findViewById(R.id.fl_et_server_address);
-        mServerPort = (EditText) findViewById(R.id.fl_et_server_port);
+        mUserName = findViewById(R.id.fl_et_username);
+        mServerAddress = findViewById(R.id.fl_et_server_address);
+        mServerPort = findViewById(R.id.fl_et_server_port);
+
+        mUserName.setText(Utilities.getPreference(this, Utilities.PREFERENCE_USERNAME));
+        mServerAddress.setText(Utilities.getPreference(this, Utilities.PREFERENCE_SERVER_NAME, "192.168.0.1"));
+        mServerPort.setText(Utilities.getPreference(this, Utilities.PREFERENCE_SERVER_PORT, "9009"));
 
         findViewById(R.id.fl_button_connect).setOnClickListener(this);
 
-        //replaceFragmentOnLayout(R.id.main_content, mFragmentLogin);
-
+        mUserName.requestFocus();
     }
 
     public void changeToMainChat() {
-        //replaceFragmentOnLayout(R.id.main_content, mFragmentMainChat);
-
-        if (!TextUtils.isEmpty(mUserName.getText())) {
-            if (!TextUtils.isEmpty(mServerAddress.getText())) {
-                try {
-                    Messenger.setActivity(this);
-
-                    final Client client = Messenger.getInstance().getClient();
-
-                    client.setConfigServerAddress(mServerAddress.getText().toString());
-                    client.setConfigUsername(mUserName.getText().toString());
-
-                    if (!TextUtils.isEmpty(mServerPort.getText())) {
-                        client.setConfigServerPort(Integer.parseInt(mServerPort.getText().toString()));
-                    } else {
-                        client.setConfigServerPort(9009);
-                    }
-
-                    new AsyncTask<Void, Void, Boolean>() {
-
-                        @Override
-                        protected void onPreExecute() {
-                            super.onPreExecute();
-                            showProgressBar();
-                        }
-
-                        @Override
-                        protected Boolean doInBackground(Void... voids) {
-                            client.connect();
-
-                            return client.isConnected();
-                        }
-
-                        @Override
-                        protected void onPostExecute(Boolean connected) {
-                            hideProgressBar();
-                            if (connected) {
-                                startActivity(new Intent(MainActivity.this, TabsActivity.class));
-                            } else {
-                                mServerAddress.requestFocus();
-                                Utilities.showMessage(MainActivity.this, "Não consegui conectar ao servidor.");
-                            }
-                        }
-                    }.execute();
-
-                } catch (NumberFormatException e) {
-                    Utilities.showMessage(this, "Digite uma porta válida.");
-                    mServerPort.requestFocus();
-                }
-            } else {
-                mServerAddress.requestFocus();
-                Utilities.showMessage(this, "Digite o IP do servidor.");
-            }
-        } else {
+        if (TextUtils.isEmpty(mUserName.getText())) {
             mUserName.requestFocus();
-            Utilities.showMessage(this, "Digite o nome de usuário.");
+            Utilities.showMessage(this, R.string.fill_username);
+            return;
         }
 
+        if (TextUtils.isEmpty(mServerAddress.getText())) {
+            mServerAddress.requestFocus();
+            Utilities.showMessage(this, R.string.fill_server_ip);
+            return;
+        }
 
-    }
-
-    /*public void replaceFragmentOnLayout(int target, ChatFragment fragment) {
-        drawOnLayout("replace", target, fragment);
-    }
-
-    private void drawOnLayout(String type, int target, ChatFragment fragment) {
-        FragmentManager fm = getFragmentManager();
-        FragmentTransaction ft = fm.beginTransaction();
-
+        Messenger.setActivity(this);
+        Client client = Messenger.getInstance().getClient();
+        client.setConfigServerAddress(mServerAddress.getText().toString());
+        client.setConfigUsername(mUserName.getText().toString());
         try {
-            if (type.startsWith("r")) {
-                ft.replace(target, fragment, fragment.getTAG());
-            } else if (type.startsWith("add")) {
-                ft.add(target, fragment, fragment.getTAG());
+            if (!TextUtils.isEmpty(mServerPort.getText())) {
+                client.setConfigServerPort(Integer.parseInt(mServerPort.getText().toString()));
             } else {
-                ft.remove(fragment);
+                client.setConfigServerPort(9009);
             }
-            ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-            ft.commit();
-        } catch (IllegalStateException e) {
-            Log.e(TAG, "IllegalStateException", e);
+        } catch (NumberFormatException e) {
+            Utilities.showMessage(this, R.string.fill_valid_port);
+            mServerPort.requestFocus();
         }
-    }*/
+
+        Utilities.savePreference(this, Utilities.PREFERENCE_USERNAME, mUserName.getText().toString());
+        Utilities.savePreference(this, Utilities.PREFERENCE_SERVER_NAME, mServerAddress.getText().toString());
+        Utilities.savePreference(this, Utilities.PREFERENCE_SERVER_PORT, mServerPort.getText().toString());
+
+        new ConnectionTask(this).execute();
+    }
 
     @Override
     protected void onDestroy() {
@@ -169,7 +151,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     }
 
     public void loadProgressBar(int id, int visibility, int color) {
-        progressBar = (ProgressBar) findViewById(id);
+        progressBar = findViewById(id);
 
         progressBar.getIndeterminateDrawable().setColorFilter(
                 color,
@@ -205,9 +187,5 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 progressBar.setVisibility(View.VISIBLE);
             }
         });
-    }
-
-    public ProgressBar getProgressBar() {
-        return progressBar;
     }
 }

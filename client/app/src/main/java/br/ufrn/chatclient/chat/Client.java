@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import br.ufrn.chatclient.models.User;
 import br.ufrn.chatclient.utils.JSONParser;
@@ -46,19 +47,15 @@ public class Client {
                     Log.d(TAG, "Data received: " + data);
 
                     if (data != null) {
-                        JSONParser.parseString(data);
+                        data = data.trim().replaceAll("\n", "").replace("\r", "");
+                        if (!data.equals("")) {
+                            JSONParser.parseString(data);
+                        }
                     } else {
                         appOpened = false;
                         Utilities.showMessage(mActivity, "Conexão perdida");
                     }
-
-                    //mListener.onMessage();
-
-                    //mBufferedWriter.newLine();
-                    //mBufferedWriter.flush();
-
                 } while (appOpened);
-                //mSocket.close();
 
             } catch (IOException ex) {
                 Log.e(TAG, "In loop", ex);
@@ -90,11 +87,11 @@ public class Client {
             mSocket.setTcpNoDelay(true);
 
             mOutput = mSocket.getOutputStream();
-            mOutput.write(("{\"setname\": \"" + config.getUsername() + "\"}\r\n").getBytes("ASCII"));
+            mOutput.write(("{\"setname\": \"" + config.getUsername() + "\"}\r\n").getBytes(StandardCharsets.US_ASCII));
             mOutput.flush();
 
             mBufferedReader = new BufferedReader(new InputStreamReader(
-                    mSocket.getInputStream(), Charset.forName("ASCII")));
+                    mSocket.getInputStream(), StandardCharsets.US_ASCII));
 
             Log.d(TAG, "Connection result: " + mSocket.isConnected());
 
@@ -115,7 +112,6 @@ public class Client {
         } catch (IOException ex) {
             Log.e(TAG, "Could not create socket: " + config, ex);
         }
-
 
         mConnected = false;
     }
@@ -138,7 +134,6 @@ public class Client {
     }
 
     public void sendData(String data) {
-
         try {
             String toSend = data + "\r\n";
 

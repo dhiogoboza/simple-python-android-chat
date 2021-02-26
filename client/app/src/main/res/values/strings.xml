@@ -10,5 +10,9 @@
     <string name="username_hint">Digite seu nome</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="you">Você</string>
+    <string name="error_connecting">Error connecting to the server</string>
+    <string name="fill_username">Fill the username</string>
+    <string name="fill_server_ip">Fil the server IP</string>
+    <string name="fill_valid_port">Fill with a valid port number</string>
 
 </resources>
